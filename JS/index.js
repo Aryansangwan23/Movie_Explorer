@@ -1,58 +1,99 @@
-'use strict';
 
-const API_KEY  = '157d1b72';
-const BASE_URL = 'https://www.omdbapi.com/';
 
-const container = document.getElementById("movieContainer");
-const message = document.getElementById("message");
+const k = '157d1b72';
+const base = 'https://www.omdbapi.com/';
 
-async function searchMovies() {
-    const query = document.getElementById("searchInput").value;
+const box = document.getElementById("movieContainer");
+const msg = document.getElementById("message");
+const inp = document.getElementById("searchInput");
+const title = document.getElementById("sectionTitle");
 
-    if (!query) {
-        message.textContent = "Enter a movie name!";
-        return;
+// Enter key search
+inp.addEventListener("keypress", function(e){
+    if(e.key === "Enter"){
+        searchMovies();
     }
+});
 
-    message.textContent = "Loading...";
-    container.innerHTML = "";
+// Load default movies
+window.onload = function(){
+    loadDefault();
+};
+
+async function loadDefault(){
+    msg.textContent = "Loading...";
+    title.textContent = "New Releases";
 
     try {
-        // ✅ Using YOUR API format
-        const url = new URL(BASE_URL);
-        url.searchParams.set('apikey', API_KEY);
-        url.searchParams.set('s', query);
+        let u = new URL(base);
+        u.searchParams.set('apikey', k);
+        u.searchParams.set('s', '2024');
 
-        const response = await fetch(url.toString());
-        const data = await response.json();
+        const res = await fetch(u);
+        const data = await res.json();
 
-        if (data.Response === "False") {
-            message.textContent = "No movies found!";
-            return;
+        if (data.Response === "True") {
+            msg.textContent = "";
+            showStuff(data.Search);
+        } else {
+            msg.textContent = "Couldn't load movies";
         }
 
-        message.textContent = "";
-
-        displayMovies(data.Search);
-
-    } catch (error) {
-        message.textContent = "Error fetching data!";
+    } catch (e) {
+        msg.textContent = "Error loading movies";
     }
 }
 
-function displayMovies(movies) {
-    container.innerHTML = "";
+async function searchMovies() {
+    const val = inp.value.trim();
 
-    movies.map(movie => {
-        const card = document.createElement("div");
-        card.classList.add("movie-card");
+    if (!val) {
+        msg.textContent = "Type something first...";
+        return;
+    }
 
-        card.innerHTML = `
-            <img src="${movie.Poster !== "N/A" ? movie.Poster : ""}">
-            <h3>${movie.Title}</h3>
-            <p>${movie.Year}</p>
+    msg.textContent = "Searching...";
+    title.textContent = "Search Results";
+    box.innerHTML = "";
+
+    try {
+        let u = new URL(base);
+        u.searchParams.set('apikey', k);
+        u.searchParams.set('s', val);
+
+        const res = await fetch(u);
+        const data = await res.json();
+
+        if (data.Response === "False") {
+            msg.textContent = "Nothing found 😅";
+            return;
+        }
+
+        msg.textContent = "";
+        showStuff(data.Search);
+
+    } catch (e) {
+        msg.textContent = "Something went wrong!";
+    }
+}
+
+function showStuff(arr) {
+    box.innerHTML = "";
+
+    arr.forEach(x => {
+        const d = document.createElement("div");
+        d.className = "movie-card";
+
+        let img = x.Poster !== "N/A"
+            ? x.Poster
+            : "https://via.placeholder.com/200x300?text=No+Image";
+
+        d.innerHTML = `
+            <img src="${img}">
+            <h3>${x.Title}</h3>
+            <p>${x.Year}</p>
         `;
 
-        container.appendChild(card);
+        box.appendChild(d);
     });
 }
